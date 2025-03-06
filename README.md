@@ -12,3 +12,16 @@
 
 ### Basket
 - создать заказ
+
+
+## Запуск через докер
+
+```shell
+docker compose up
+```
+
+## Билд
+
+```shell
+make build
+```
