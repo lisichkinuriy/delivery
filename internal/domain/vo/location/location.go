@@ -1,4 +1,4 @@
-package vo
+package location
 
 import (
 	"errors"
@@ -19,7 +19,7 @@ type Location struct {
 	y int
 }
 
-func NewLocation(x int, y int) (Location, error) {
+func New(x int, y int) (Location, error) {
 	if x < minX || x > maxX {
 		return Location{}, errors.New("x is out of range")
 	}
@@ -46,5 +46,5 @@ func Fake() (Location, error) {
 	x := r.Intn(maxX) + 1
 	y := r.Intn(maxY) + 1
 
-	return NewLocation(x, y)
+	return New(x, y)
 }
