@@ -1,4 +1,4 @@
-package speed
+package vo
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -6,20 +6,20 @@ import (
 )
 
 func TestNew(t *testing.T) {
-	value := MIN
+	value := MIN_SPEED
 
-	speed, err := New(value)
+	speed, err := NewSpeed(value)
 	assert.NoError(t, err)
 	assert.Equal(t, value, speed.Value())
 }
 
 func TestSpeed_Fake(t *testing.T) {
-	_, err := Fake()
+	_, err := FakeSpeed()
 	assert.NoError(t, err)
 }
 
 func TestConstraints(t *testing.T) {
-	value := MIN - 1
-	_, err := New(value)
+	value := MIN_SPEED - 1
+	_, err := NewSpeed(value)
 	assert.NotNil(t, err)
 }

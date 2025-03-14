@@ -1,4 +1,4 @@
-package location
+package vo
 
 import (
 	"github.com/stretchr/testify/assert"
@@ -8,7 +8,7 @@ import (
 func Test_LocationCanBeCreated(t *testing.T) {
 	x := 1
 	y := 2
-	l, err := New(x, y)
+	l, err := NewLocation(x, y)
 
 	assert.NoError(t, err)
 	assert.Equal(t, x, l.X())
@@ -25,8 +25,8 @@ func Test_CanCalcDistance(t *testing.T) {
 
 	// TODO: заделать цикл
 
-	l1, _ := New(x1, y1)
-	l2, _ := New(x2, y2)
+	l1, _ := NewLocation(x1, y1)
+	l2, _ := NewLocation(x2, y2)
 
 	d := Distance(l1, l2)
 
@@ -35,7 +35,7 @@ func Test_CanCalcDistance(t *testing.T) {
 
 func Test_FakeLocation(t *testing.T) {
 	for i := 0; i < 100; i++ {
-		_, err := Fake()
+		_, err := FakeLocation()
 		assert.NoError(t, err)
 	}
 }

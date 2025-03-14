@@ -2,19 +2,17 @@ package transport
 
 import (
 	"github.com/google/uuid"
-	"lisichkinuriy/delivery/internal/domain/vo/location"
-	"lisichkinuriy/delivery/internal/domain/vo/speed"
-	"lisichkinuriy/delivery/internal/domain/vo/transportName"
+	"lisichkinuriy/delivery/internal/domain/vo"
 	"math"
 )
 
 type Transport struct {
 	id    uuid.UUID
-	name  transportName.TransportName
-	speed speed.Speed
+	name  vo.TransportName
+	speed vo.Speed
 }
 
-func New(name transportName.TransportName, speed speed.Speed) (*Transport, error) {
+func New(name vo.TransportName, speed vo.Speed) (*Transport, error) {
 
 	return &Transport{
 		id:    uuid.New(),
@@ -23,11 +21,11 @@ func New(name transportName.TransportName, speed speed.Speed) (*Transport, error
 	}, nil
 }
 
-func (t *Transport) ID() uuid.UUID                     { return t.id }
-func (t *Transport) Name() transportName.TransportName { return t.name }
-func (t *Transport) Speed() speed.Speed                { return t.speed }
+func (t *Transport) ID() uuid.UUID          { return t.id }
+func (t *Transport) Name() vo.TransportName { return t.name }
+func (t *Transport) Speed() vo.Speed        { return t.speed }
 
-func (t *Transport) Move(current location.Location, target location.Location) (location.Location, error) {
+func (t *Transport) Move(current vo.Location, target vo.Location) (vo.Location, error) {
 	if current == target {
 		return current, nil // Уже на месте
 	}
@@ -48,7 +46,7 @@ func (t *Transport) Move(current location.Location, target location.Location) (l
 	newX := current.X() + int(dx)
 	newY := current.Y() + int(dy)
 
-	newLocation, err := location.New(newX, newY)
+	newLocation, err := vo.NewLocation(newX, newY)
 	if err != nil {
 		return current, err
 	}

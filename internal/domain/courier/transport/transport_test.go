@@ -2,15 +2,13 @@ package transport
 
 import (
 	"github.com/stretchr/testify/assert"
-	"lisichkinuriy/delivery/internal/domain/vo/location"
-	"lisichkinuriy/delivery/internal/domain/vo/speed"
-	"lisichkinuriy/delivery/internal/domain/vo/transportName"
+	"lisichkinuriy/delivery/internal/domain/vo"
 	"testing"
 )
 
 func TestNew(t *testing.T) {
-	name, _ := transportName.Fake()
-	s, _ := speed.Fake()
+	name, _ := vo.FakeTransportName()
+	s, _ := vo.FakeSpeed()
 	transport, err := New(name, s)
 
 	assert.NoError(t, err)
@@ -19,31 +17,31 @@ func TestNew(t *testing.T) {
 }
 
 func TestTransport_Move(t *testing.T) {
-	name, _ := transportName.New("Pedestrian")
-	s, _ := speed.New(1)
+	name, _ := vo.NewTransportName("Pedestrian")
+	s, _ := vo.NewSpeed(1)
 
 	pedestrian, err := New(name, s)
 	assert.NoError(t, err)
 
-	name, _ = transportName.New("Bicycle")
-	s, _ = speed.New(2)
+	name, _ = vo.NewTransportName("Bicycle")
+	s, _ = vo.NewSpeed(2)
 	bicycle, err := New(name, s)
 	assert.NoError(t, err)
 
-	location11, _ := location.New(1, 1)
-	location12, _ := location.New(1, 2)
-	location13, _ := location.New(1, 3)
-	location15, _ := location.New(1, 5)
-	location22, _ := location.New(2, 2)
-	location32, _ := location.New(3, 2)
-	location42, _ := location.New(4, 2)
+	location11, _ := vo.NewLocation(1, 1)
+	location12, _ := vo.NewLocation(1, 2)
+	location13, _ := vo.NewLocation(1, 3)
+	location15, _ := vo.NewLocation(1, 5)
+	location22, _ := vo.NewLocation(2, 2)
+	location32, _ := vo.NewLocation(3, 2)
+	location42, _ := vo.NewLocation(4, 2)
 
 	tests := []struct {
 		name      string
 		transport *Transport
-		start     location.Location
-		target    location.Location
-		expected  location.Location
+		start     vo.Location
+		target    vo.Location
+		expected  vo.Location
 	}{
 		// Пешеход
 		{"Pedestrian Same Location", pedestrian, location11, location11, location11},
