@@ -5,6 +5,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
+	"lisichkinuriy/delivery/cmd"
 	"net/http"
 	"os"
 )
@@ -12,11 +13,13 @@ import (
 func main() {
 	// TODO. context
 
+	app := cmd.NewCompositionRoot()
+
 	port := getEnvVariable("HTTP_PORT", "8081")
-	startWebServer(port)
+	startWebServer(app, port)
 }
 
-func startWebServer(port string) {
+func startWebServer(compositionRoot cmd.CompositionRoot, port string) {
 	e := echo.New()
 	e.GET("/health", func(c echo.Context) error {
 		e.Logger.Info("Health check")

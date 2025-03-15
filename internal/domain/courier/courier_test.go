@@ -11,7 +11,7 @@ func Test_CourierShouldBeCorrectWhenParamsAreCorrectOnCreated(t *testing.T) {
 
 	transport_name, _ := vo.FakeTransportName()
 	speed, _ := vo.FakeSpeed()
-	name := "Велосипедист"
+	name, _ := vo.FakeCourierName()
 	l := vo.MinLocation()
 
 	// Act
@@ -35,7 +35,7 @@ func Test_CourierCanCalculateTimeToLocation(t *testing.T) {
 
 	transport_name, _ := vo.FakeTransportName()
 	speed, _ := vo.NewSpeed(2)
-	name := "Велосипедист"
+	name, _ := vo.FakeCourierName()
 	l := vo.MinLocation()
 
 	// Arrange
@@ -45,7 +45,7 @@ func Test_CourierCanCalculateTimeToLocation(t *testing.T) {
 	assert.NoError(t, err)
 
 	// Act
-	time, err := courier.CalculateMovesToLocation(target)
+	time, err := courier.CalculateTimeToLocation(target)
 
 	// Assert
 	assert.NoError(t, err)
