@@ -1,22 +1,59 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/gommon/log"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 	"lisichkinuriy/delivery/cmd"
+	"lisichkinuriy/delivery/internal/adapters/out/postgres/courierrepo"
+	"lisichkinuriy/delivery/internal/adapters/out/postgres/orderrepo"
 	"net/http"
 	"os"
 )
 
 func main() {
-	// TODO. context
-
-	app := cmd.NewCompositionRoot()
+	ctx := context.Background()
+	gormDB := mustGormOpen()
+	mustAutoMigrate(gormDB)
+	app := cmd.NewCompositionRoot(ctx, gormDB)
 
 	port := getEnvVariable("HTTP_PORT", "8081")
 	startWebServer(app, port)
+}
+
+func mustGormOpen() *gorm.DB {
+	dsn := "host=localhost user=username password=secret dbname=delivery port=5490 sslmode=disable TimeZone=Europe/Moscow"
+	pgGorm, err := gorm.Open(postgres.New(
+		postgres.Config{
+			DSN:                  dsn,
+			PreferSimpleProtocol: true,
+		},
+	), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("connection to postgres through gorm\n: %s", err)
+	}
+	return pgGorm
+}
+
+func mustAutoMigrate(db *gorm.DB) {
+	err := db.AutoMigrate(&courierrepo.CourierDTO{})
+	if err != nil {
+		log.Fatalf("Ошибка миграции: %v", err)
+	}
+
+	err = db.AutoMigrate(&courierrepo.TransportDTO{})
+	if err != nil {
+		log.Fatalf("Ошибка миграции: %v", err)
+	}
+
+	err = db.AutoMigrate(&orderrepo.OrderDTO{})
+	if err != nil {
+		log.Fatalf("Ошибка миграции: %v", err)
+	}
 }
 
 func startWebServer(compositionRoot cmd.CompositionRoot, port string) {

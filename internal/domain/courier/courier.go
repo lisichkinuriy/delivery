@@ -91,3 +91,23 @@ func (c *Courier) Move(target vo.Location) error {
 
 	return nil
 }
+
+func (c *Courier) Status() Status {
+	return c.status
+}
+
+func RestoreCourier(id uuid.UUID, name string,
+	x int, y int, status Status,
+	transportId uuid.UUID, transportName string, speed int) *Courier {
+	t := transport.RestoreTransport(transportId, transportName, speed)
+	cName, _ := vo.NewCourierName(name)
+	l, _ := vo.NewLocation(x, y)
+
+	return &Courier{
+		id:        id,
+		name:      cName,
+		transport: t,
+		location:  l,
+		status:    status,
+	}
+}

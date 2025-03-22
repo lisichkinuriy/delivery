@@ -1,3 +1,17 @@
+x-postgres: &postgres
+  image: postgres:17
+
+  networks:
+    default:
+
+  restart: always
+
+  healthcheck:
+    test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER" ]
+    interval: 5s
+    timeout: 5s
+    retries: 5
+
 services:
   app:
     build:
@@ -7,3 +21,29 @@ services:
     ports:
       - ${HTTP_PORT:?error}:8081
 
+  db:
+    <<: *postgres
+
+    environment:
+      POSTGRES_USER: ${DB_USER:?error}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?error}
+      POSTGRES_DB: ${DB_DBNAME:?error}
+
+    ports:
+      - 127.0.0.1:${DOCKER_DB_EXPOSED_PORT:?error}:5432
+    volumes:
+      - db:/var/lib/postgresql/data
+
+  dbtest:
+    <<: *postgres
+
+    environment:
+      POSTGRES_USER: "test"
+      POSTGRES_PASSWORD: "test"
+      POSTGRES_DB: "test"
+
+    ports:
+      - 127.0.0.1:${DOCKER_TEST_DB_EXPOSED_PORT:?error}:5432
+
+volumes:
+  db:
