@@ -9,18 +9,18 @@ import (
 
 type Courier struct {
 	id        uuid.UUID
-	name      string
+	name      vo.CourierName
 	transport *transport.Transport
 	location  vo.Location
 	status    Status
 }
 
-func NewCourier(name string,
+func NewCourier(name vo.CourierName,
 	transportName vo.TransportName,
 	speed vo.Speed,
 	location vo.Location) (*Courier, error) {
 
-	if name == "" {
+	if name.IsEmpty() {
 		return nil, errors.New("name is empty")
 	}
 	if transportName.IsEmpty() {
@@ -48,7 +48,7 @@ func NewCourier(name string,
 }
 
 func (c *Courier) ID() uuid.UUID                   { return c.id }
-func (c *Courier) Name() string                    { return c.name }
+func (c *Courier) Name() vo.CourierName            { return c.name }
 func (c *Courier) Transport() *transport.Transport { return c.transport }
 func (c *Courier) Location() vo.Location           { return c.location }
 
@@ -67,7 +67,7 @@ func (c *Courier) IsFree() bool { return c.status == StatusFree }
 
 func (c *Courier) Equals(other *Courier) bool { return c.id == other.id }
 
-func (c *Courier) CalculateMovesToLocation(target vo.Location) (float64, error) {
+func (c *Courier) CalculateTimeToLocation(target vo.Location) (float64, error) {
 	if target.IsEmpty() {
 		return 0, errors.New("target is empty")
 	}
