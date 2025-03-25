@@ -1,0 +1,20 @@
+all: true
+recursive: true
+with-expecter: True
+mockname: "{{.InterfaceName}}Mock"
+filename: "{{.MockName}}.go"
+dir: ./mocks
+packages:
+  lisichkinuriy/delivery/internal/adapters/ports:
+    interfaces:
+      ICourierRepository:
+        config:
+          dir: ./internal/adapters/ports/mocks
+      IOrderRepository:
+        config:
+          dir: ./internal/adapters/ports/mocks
+  lisichkinuriy/delivery/internal/domain/services:
+    interfaces:
+      IOrderDispatcher:
+        config:
+          dir: ./internal/domain/services/mocks
