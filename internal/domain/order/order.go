@@ -63,3 +63,12 @@ func (o *Order) Complete() error {
 	o.status = StatusCompleted
 	return nil
 }
+
+func RestoreOrder(id uuid.UUID, courierID *uuid.UUID, location vo.Location, status Status) *Order {
+	return &Order{
+		id:        id,
+		courierID: courierID,
+		location:  location,
+		status:    status,
+	}
+}

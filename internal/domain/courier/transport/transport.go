@@ -52,3 +52,21 @@ func (t *Transport) Move(current vo.Location, target vo.Location) (vo.Location, 
 	}
 	return newLocation, nil
 }
+
+func RestoreTransport(id uuid.UUID, name string, speed int) *Transport {
+	transportName, err := vo.NewTransportName(name)
+	if err != nil {
+		return nil
+	}
+
+	newSpeed, err := vo.NewSpeed(speed)
+	if err != nil {
+		return nil
+	}
+
+	return &Transport{
+		id:    id,
+		name:  transportName,
+		speed: newSpeed,
+	}
+}
