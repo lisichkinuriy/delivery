@@ -7,13 +7,28 @@ import (
 	"lisichkinuriy/delivery/internal/adapters/out/postgres/courierrepo"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres/orderrepo"
 	"lisichkinuriy/delivery/internal/adapters/ports"
+	"lisichkinuriy/delivery/internal/application/usecases/commands"
+	"lisichkinuriy/delivery/internal/application/usecases/queries"
 	"lisichkinuriy/delivery/internal/domain/services"
 	"log"
 )
 
 type CompositionRoot struct {
-	DomainServices DomainServices
-	Repositories   Repositories
+	DomainServices  DomainServices
+	Repositories    Repositories
+	CommandHandlers CommandHandlers
+	QueryHandlers   QueryHandlers
+}
+
+type CommandHandlers struct {
+	AssignOrderHandler  commands.IAssignOrderHandler
+	CreateOrderHandler  commands.ICreateOrderHandler
+	MoveCouriersHandler commands.IMoveCouriersHandler
+}
+
+type QueryHandlers struct {
+	GetAllCouriersQueryHandler        queries.IGetAllCouriersQueryHandler
+	GetNotCompletedOrdersQueryHandler queries.IGetNotCompletedOrdersQueryHandler
 }
 
 type DomainServices struct {
@@ -43,14 +58,52 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 		log.Fatal(err)
 	}
 
+	// Command Handlers
+	createOrderHandler, err := commands.NewCreateOrderHandler(orderRepo)
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+
+	assignOrderHandler, err := commands.NewAssignOrderHandler(
+		unitOfWork, courierRepo, orderRepo, orderDispatcher)
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+
+	moveCouriersHandler, err := commands.NewMoveCouriersHandler(
+		unitOfWork, courierRepo, orderRepo)
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+
+	// Query Handlers
+	getAllCouriersQueryHandler, err := queries.NewGetAllCouriersQueryHandler(db)
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+
+	getNotCompletedOrdersQueryHandler, err := queries.NewGetNotCompletedOrdersQueryHandler(db)
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+
 	compositionRoot := CompositionRoot{
 		DomainServices: DomainServices{
-			OrderDispatcher: orderDispatcher,
+			orderDispatcher,
 		},
 		Repositories: Repositories{
-			UnitOfWork:        unitOfWork,
-			OrderRepository:   orderRepo,
-			CourierRepository: courierRepo,
+			unitOfWork,
+			orderRepo,
+			courierRepo,
+		},
+		CommandHandlers: CommandHandlers{
+			assignOrderHandler,
+			createOrderHandler,
+			moveCouriersHandler,
+		},
+		QueryHandlers: QueryHandlers{
+			getAllCouriersQueryHandler,
+			getNotCompletedOrdersQueryHandler,
 		},
 	}
 

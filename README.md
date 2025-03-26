@@ -25,3 +25,15 @@ docker compose up
 ```shell
 make build
 ```
+
+## Mockery
+
+
+```shell
+docker pull vektra/mockery
+```
+
+```shell
+docker run -v "$PWD":/src -w /src vektra/mockery --all --case=underscore
+```
+

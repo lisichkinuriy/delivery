@@ -19,6 +19,8 @@ func (o *Order) CourierID() *uuid.UUID { return o.courierID }
 func (o *Order) Location() vo.Location { return o.location }
 func (o *Order) ID() uuid.UUID         { return o.id }
 
+func (o *Order) IsCreated() bool { return o.Status() == StatusCreated }
+
 func NewOrder(id uuid.UUID, l vo.Location) (*Order, error) {
 	if id == uuid.Nil {
 		return nil, errors.New("id should not be nil")
