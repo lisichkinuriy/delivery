@@ -32,11 +32,8 @@ func (ch *CreateOrderHandler) Handle(ctx context.Context, command CreateOrderCom
 	}
 
 	orderAggregate, err := ch.orderRepo.Get(ctx, command.OrderId())
-	if err != nil {
-		return err
-	}
 	if orderAggregate != nil {
-		return nil
+		return errors.New("order already exists")
 	}
 
 	location, err := vo.FakeLocation()
