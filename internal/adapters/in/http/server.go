@@ -71,7 +71,7 @@ func (s *Server) GetCouriers(ctx echo.Context) error {
 }
 
 func (s *Server) CreateOrder(ctx echo.Context) error {
-	command, err := commands.NewCreateOrderCommand(uuid.New(), "Бажная")
+	command, err := commands.NewCreateOrderCommand(uuid.New(), "foo bar")
 	if err != nil {
 		return err
 	}
