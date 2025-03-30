@@ -5,6 +5,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 	"lisichkinuriy/delivery/internal/adapters/in/jobs"
+	"lisichkinuriy/delivery/internal/adapters/out/grpc"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres/courierrepo"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres/orderrepo"
@@ -21,6 +22,11 @@ type CompositionRoot struct {
 	CommandHandlers CommandHandlers
 	QueryHandlers   QueryHandlers
 	Jobs            Jobs
+	Clients         Clients
+}
+
+type Clients struct {
+	Geo ports.IGeoClient
 }
 
 type Jobs struct {
@@ -66,8 +72,13 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 		log.Fatal(err)
 	}
 
+	geoclient, err := grpc.NewGRPCGeoClient("localhost:5004")
+	if err != nil {
+		log.Fatalf("could not create grpc geoclient: %v", err)
+	}
+
 	// Command Handlers
-	createOrderHandler, err := commands.NewCreateOrderHandler(orderRepo)
+	createOrderHandler, err := commands.NewCreateOrderHandler(orderRepo, geoclient)
 	if err != nil {
 		log.Fatalf("run application error: %s", err)
 	}
@@ -126,6 +137,9 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 		Jobs: Jobs{
 			moveCouriersJob,
 			assignOrderJob,
+		},
+		Clients: Clients{
+			geoclient,
 		},
 	}
 

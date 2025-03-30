@@ -95,7 +95,7 @@ func startWebServer(compositionRoot cmd.CompositionRoot, port string) {
 
 	e.GET("/health", func(c echo.Context) error {
 		e.Logger.Info("Health check")
-		return c.String(http.StatusOK, "healthy")
+		return c.String(http.StatusOK, "Delivery is healthy")
 	})
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf("0.0.0.0:%s", port)))

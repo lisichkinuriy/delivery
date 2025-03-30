@@ -3,9 +3,9 @@ package commands
 import (
 	"context"
 	"errors"
+	"github.com/labstack/gommon/log"
 	"lisichkinuriy/delivery/internal/adapters/ports"
 	"lisichkinuriy/delivery/internal/domain/order"
-	"lisichkinuriy/delivery/internal/domain/vo"
 )
 
 type ICreateOrderHandler interface {
@@ -16,14 +16,17 @@ var _ ICreateOrderHandler = &CreateOrderHandler{}
 
 type CreateOrderHandler struct {
 	orderRepo ports.IOrderRepository
+	geoClient ports.IGeoClient
 }
 
-func NewCreateOrderHandler(orderRepo ports.IOrderRepository) (*CreateOrderHandler, error) {
+func NewCreateOrderHandler(orderRepo ports.IOrderRepository, geoClient ports.IGeoClient) (*CreateOrderHandler, error) {
 	if orderRepo == nil {
 		return nil, errors.New("order repository is nil")
 	}
-
-	return &CreateOrderHandler{orderRepo: orderRepo}, nil
+	if geoClient == nil {
+		return nil, errors.New("geo client is nil")
+	}
+	return &CreateOrderHandler{orderRepo: orderRepo, geoClient: geoClient}, nil
 }
 
 func (ch *CreateOrderHandler) Handle(ctx context.Context, command CreateOrderCommand) error {
@@ -36,10 +39,11 @@ func (ch *CreateOrderHandler) Handle(ctx context.Context, command CreateOrderCom
 		return errors.New("order already exists")
 	}
 
-	location, err := vo.FakeLocation()
+	location, err := ch.geoClient.GetLocation(ctx, command.Street())
 	if err != nil {
 		return err
 	}
+	log.Info(location.X(), location.Y())
 
 	newOrder, err := order.NewOrder(command.OrderId(), location)
 	if err != nil {
