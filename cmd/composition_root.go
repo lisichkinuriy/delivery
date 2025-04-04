@@ -2,7 +2,9 @@ package cmd
 
 import (
 	"context"
+	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
+	"lisichkinuriy/delivery/internal/adapters/in/jobs"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres/courierrepo"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres/orderrepo"
@@ -18,6 +20,12 @@ type CompositionRoot struct {
 	Repositories    Repositories
 	CommandHandlers CommandHandlers
 	QueryHandlers   QueryHandlers
+	Jobs            Jobs
+}
+
+type Jobs struct {
+	MoveCouriersJob cron.Job
+	AssignOrdersJob cron.Job
 }
 
 type CommandHandlers struct {
@@ -87,6 +95,16 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 		log.Fatalf("run application error: %s", err)
 	}
 
+	assignOrderJob, err := jobs.NewAssignOrdersJob(assignOrderHandler)
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+
+	moveCouriersJob, err := jobs.NewMoveCouriersJob(moveCouriersHandler)
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+
 	compositionRoot := CompositionRoot{
 		DomainServices: DomainServices{
 			orderDispatcher,
@@ -104,6 +122,10 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 		QueryHandlers: QueryHandlers{
 			getAllCouriersQueryHandler,
 			getNotCompletedOrdersQueryHandler,
+		},
+		Jobs: Jobs{
+			moveCouriersJob,
+			assignOrderJob,
 		},
 	}
 
