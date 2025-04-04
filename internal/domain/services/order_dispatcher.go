@@ -38,6 +38,14 @@ func (p *OrderDispatcher) Dispatch(order *order.Order, couriers []*courier.Couri
 	if bestCourier == nil {
 		return nil, errors.New("cannot find the best courier")
 	}
+	err := order.Assign(bestCourier)
+	if err != nil {
+		return nil, err
+	}
+	err = bestCourier.SetBusy()
+	if err != nil {
+		return nil, err
+	}
 
 	return bestCourier, nil
 }
