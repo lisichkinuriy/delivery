@@ -37,3 +37,10 @@ docker pull vektra/mockery
 docker run -v "$PWD":/src -w /src vektra/mockery --all --case=underscore
 ```
 
+
+```shell
+sudo apt  install protobuf-compiler
+go install google.golang.org/protobuf/cmd/protoc-gen-go@latests
+
+protoc --go_out=./pkg/queues/basketconfirmedpb ./api/proto/basket_confirmed.proto
+```

@@ -26,8 +26,18 @@ func main() {
 	app := cmd.NewCompositionRoot(ctx, gormDB)
 
 	port := getEnvVariable("HTTP_PORT", "8081")
+
+	startKafkaConsumer(app)
 	startCron(app)
 	startWebServer(app, port)
+}
+
+func startKafkaConsumer(app cmd.CompositionRoot) {
+	go func() {
+		if err := app.Consumers.BasketConfirmedConsumer.Consume(); err != nil {
+			log.Fatal("Kafka consumer error", err)
+		}
+	}()
 }
 
 func mustGormOpen() *gorm.DB {
