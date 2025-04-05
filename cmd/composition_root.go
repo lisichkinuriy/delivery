@@ -5,6 +5,7 @@ import (
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 	"lisichkinuriy/delivery/internal/adapters/in/jobs"
+	"lisichkinuriy/delivery/internal/adapters/in/kafka"
 	"lisichkinuriy/delivery/internal/adapters/out/grpc"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres/courierrepo"
@@ -23,6 +24,9 @@ type CompositionRoot struct {
 	QueryHandlers   QueryHandlers
 	Jobs            Jobs
 	Clients         Clients
+	Consumers       Consumers
+
+	closeFns []func() error
 }
 
 type Clients struct {
@@ -32,6 +36,10 @@ type Clients struct {
 type Jobs struct {
 	MoveCouriersJob cron.Job
 	AssignOrdersJob cron.Job
+}
+
+type Consumers struct {
+	BasketConfirmedConsumer ports.IBasketConfirmedConsumer
 }
 
 type CommandHandlers struct {
@@ -116,6 +124,11 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 		log.Fatalf("run application error: %s", err)
 	}
 
+	basketConfirmedConsumer, err := kafka.NewBasketConfirmedConsumer(createOrderHandler)
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+
 	compositionRoot := CompositionRoot{
 		DomainServices: DomainServices{
 			orderDispatcher,
@@ -141,7 +154,21 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 		Clients: Clients{
 			geoclient,
 		},
+		Consumers: Consumers{
+			basketConfirmedConsumer,
+		},
 	}
 
+	compositionRoot.closeFns = append(compositionRoot.closeFns, basketConfirmedConsumer.Close)
+	compositionRoot.closeFns = append(compositionRoot.closeFns, basketConfirmedConsumer.Close)
+
 	return compositionRoot
+}
+
+func (cr *CompositionRoot) Close() {
+	for _, fn := range cr.closeFns {
+		if err := fn(); err != nil {
+			log.Printf("ошибка при закрытии зависимости: %v", err)
+		}
+	}
 }
