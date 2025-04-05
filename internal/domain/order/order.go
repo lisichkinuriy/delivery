@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"lisichkinuriy/delivery/internal/domain/courier"
+	"lisichkinuriy/delivery/internal/domain/pkg"
 	"lisichkinuriy/delivery/internal/domain/vo"
 )
 
@@ -12,6 +13,12 @@ type Order struct {
 	location  vo.Location
 	status    Status
 	courierID *uuid.UUID
+
+	domainEvents []pkg.IDomainEvent
+}
+
+func (o *Order) raiseDomainEvent(event pkg.IDomainEvent) {
+	o.domainEvents = append(o.domainEvents, event)
 }
 
 func (o *Order) Status() Status        { return o.status }
@@ -63,7 +70,17 @@ func (o *Order) Complete() error {
 		return errors.New("order status is not assigned")
 	}
 	o.status = StatusCompleted
+
+	o.raiseDomainEvent(NewCompletedDomainEvent(o))
 	return nil
+}
+
+func (o *Order) GetDomainEvents() []pkg.IDomainEvent {
+	return o.domainEvents
+}
+
+func (o *Order) ClearDomainEvents() {
+	o.domainEvents = []pkg.IDomainEvent{}
 }
 
 func RestoreOrder(id uuid.UUID, courierID *uuid.UUID, location vo.Location, status Status) *Order {
