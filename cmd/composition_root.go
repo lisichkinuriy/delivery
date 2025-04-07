@@ -2,20 +2,29 @@ package cmd
 
 import (
 	"context"
+	"github.com/mehdihadeli/go-mediatr"
 	"github.com/robfig/cron/v3"
 	"gorm.io/gorm"
 	"lisichkinuriy/delivery/internal/adapters/in/jobs"
 	"lisichkinuriy/delivery/internal/adapters/in/kafka"
 	"lisichkinuriy/delivery/internal/adapters/out/grpc"
+	kafka2 "lisichkinuriy/delivery/internal/adapters/out/kafka"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres/courierrepo"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres/orderrepo"
 	"lisichkinuriy/delivery/internal/adapters/ports"
+	"lisichkinuriy/delivery/internal/application/eventhandlers"
+	_ "lisichkinuriy/delivery/internal/application/eventhandlers"
 	"lisichkinuriy/delivery/internal/application/usecases/commands"
 	"lisichkinuriy/delivery/internal/application/usecases/queries"
+	"lisichkinuriy/delivery/internal/domain/order"
 	"lisichkinuriy/delivery/internal/domain/services"
 	"log"
 )
+
+type Producers struct {
+	OrderCompletedProducer ports.IOrderProducer
+}
 
 type CompositionRoot struct {
 	DomainServices  DomainServices
@@ -25,8 +34,15 @@ type CompositionRoot struct {
 	Jobs            Jobs
 	Clients         Clients
 	Consumers       Consumers
+	Producers       Producers
+
+	DomainEventHandlers DomainEventHandlers
 
 	closeFns []func() error
+}
+
+type DomainEventHandlers struct {
+	eventhandlers.OrderCompletedDomainEventHandler
 }
 
 type Clients struct {
@@ -129,6 +145,21 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 		log.Fatalf("run application error: %s", err)
 	}
 
+	orderProducer, err := kafka2.NewOrderProducer()
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+
+	orderCompletedHandler, err := eventhandlers.NewOrderCompletedDomainEventHandler(orderProducer)
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+
+	err = mediatr.RegisterNotificationHandler[order.CompletedDomainEvent](orderCompletedHandler)
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+
 	compositionRoot := CompositionRoot{
 		DomainServices: DomainServices{
 			orderDispatcher,
@@ -160,6 +191,7 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 	}
 
 	compositionRoot.closeFns = append(compositionRoot.closeFns, basketConfirmedConsumer.Close)
+	compositionRoot.closeFns = append(compositionRoot.closeFns, orderProducer.Close)
 	compositionRoot.closeFns = append(compositionRoot.closeFns, basketConfirmedConsumer.Close)
 
 	return compositionRoot

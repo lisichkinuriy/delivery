@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/google/uuid"
+	"github.com/mehdihadeli/go-mediatr"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres"
@@ -97,6 +98,7 @@ func (r Repository) Update(ctx context.Context, aggregate *order.Order) error {
 	if err != nil {
 		return err
 	}
+	err = r.PublishDomainEvents(ctx, aggregate)
 	return nil
 }
 
@@ -116,4 +118,19 @@ func (r Repository) Get(ctx context.Context, ID uuid.UUID) (*order.Order, error)
 
 	aggregate := DtoToDomain(dto)
 	return aggregate, nil
+}
+
+func (r *Repository) PublishDomainEvents(ctx context.Context, aggregate *order.Order) error {
+	for _, event := range aggregate.GetDomainEvents() {
+		switch event.(type) {
+		case order.CompletedDomainEvent:
+			err := mediatr.Publish[order.CompletedDomainEvent](ctx,
+				event.(order.CompletedDomainEvent))
+			if err != nil {
+				return err
+			}
+		}
+	}
+	aggregate.ClearDomainEvents()
+	return nil
 }
