@@ -30,7 +30,7 @@ func (o *Order) IsCreated() bool { return o.Status() == StatusCreated }
 
 func NewOrder(id uuid.UUID, l vo.Location) (*Order, error) {
 	if id == uuid.Nil {
-		return nil, errors.New("id should not be nil")
+		return nil, errors.New("Id should not be nil")
 	}
 	if l.IsEmpty() {
 		return nil, errors.New("empty location")

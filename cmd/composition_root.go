@@ -12,6 +12,7 @@ import (
 	"lisichkinuriy/delivery/internal/adapters/out/postgres"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres/courierrepo"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres/orderrepo"
+	"lisichkinuriy/delivery/internal/adapters/outbox"
 	"lisichkinuriy/delivery/internal/adapters/ports"
 	"lisichkinuriy/delivery/internal/application/eventhandlers"
 	_ "lisichkinuriy/delivery/internal/application/eventhandlers"
@@ -19,7 +20,9 @@ import (
 	"lisichkinuriy/delivery/internal/application/usecases/queries"
 	"lisichkinuriy/delivery/internal/domain/order"
 	"lisichkinuriy/delivery/internal/domain/services"
+	jobs2 "lisichkinuriy/delivery/internal/jobs"
 	"log"
+	"reflect"
 )
 
 type Producers struct {
@@ -38,6 +41,8 @@ type CompositionRoot struct {
 
 	DomainEventHandlers DomainEventHandlers
 
+	EventRegistry outbox.IEventRegistry
+
 	closeFns []func() error
 }
 
@@ -52,6 +57,7 @@ type Clients struct {
 type Jobs struct {
 	MoveCouriersJob cron.Job
 	AssignOrdersJob cron.Job
+	OutboxJob       cron.Job
 }
 
 type Consumers struct {
@@ -83,6 +89,15 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 
 	orderDispatcher := services.NewOrderDispatcher()
 
+	eventRegistry, err := outbox.NewEventRegistry()
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+	err = eventRegistry.RegisterDomainEvent(reflect.TypeOf(order.CompletedDomainEvent{}))
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+
 	unitOfWork, err := postgres.NewUnitOfWork(db)
 	if err != nil {
 		log.Fatal(err)
@@ -94,6 +109,11 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 	courierRepo, err := courierrepo.NewRepository(db)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	outboxRepository, err := outbox.NewRepository(db)
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
 	}
 
 	geoclient, err := grpc.NewGRPCGeoClient("localhost:5004")
@@ -131,6 +151,11 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 	}
 
 	assignOrderJob, err := jobs.NewAssignOrdersJob(assignOrderHandler)
+	if err != nil {
+		log.Fatalf("run application error: %s", err)
+	}
+
+	outboxJob, err := jobs2.NewOutboxJob(outboxRepository, eventRegistry)
 	if err != nil {
 		log.Fatalf("run application error: %s", err)
 	}
@@ -181,6 +206,7 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 		Jobs: Jobs{
 			moveCouriersJob,
 			assignOrderJob,
+			outboxJob,
 		},
 		Clients: Clients{
 			geoclient,
@@ -188,6 +214,8 @@ func NewCompositionRoot(ctx context.Context, db *gorm.DB) CompositionRoot {
 		Consumers: Consumers{
 			basketConfirmedConsumer,
 		},
+
+		EventRegistry: eventRegistry,
 	}
 
 	compositionRoot.closeFns = append(compositionRoot.closeFns, basketConfirmedConsumer.Close)

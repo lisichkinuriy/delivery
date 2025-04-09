@@ -67,7 +67,7 @@ func (p *OrderProducer) Publish(ctx context.Context, domainEvent order.Completed
 
 	msg := &sarama.ProducerMessage{
 		Topic: "order.status.changed",
-		Key:   sarama.StringEncoder(domainEvent.ID().String()),
+		Key:   sarama.StringEncoder(domainEvent.GetEventID().String()),
 		Value: sarama.ByteEncoder(bytes),
 	}
 
@@ -84,13 +84,13 @@ func (p *OrderProducer) Close() error {
 }
 
 func (p *OrderProducer) mapDomainEventToIntegrationEvent(domainEvent order.CompletedDomainEvent) (*orderstatuschangedpb.OrderStatusChangedIntegrationEvent, error) {
-	status, ok := orderstatuschangedpb.OrderStatus_value[domainEvent.OrderStatus()]
+	status, ok := orderstatuschangedpb.OrderStatus_value[domainEvent.OrderStatus]
 	if !ok {
 		return nil, errors.New("order status not found")
 	}
 
 	integrationEvent := orderstatuschangedpb.OrderStatusChangedIntegrationEvent{
-		OrderId:     domainEvent.OrderID().String(),
+		OrderId:     domainEvent.OrderID.String(),
 		OrderStatus: orderstatuschangedpb.OrderStatus(status),
 	}
 	return &integrationEvent, nil
