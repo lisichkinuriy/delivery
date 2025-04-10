@@ -5,6 +5,6 @@ import (
 )
 
 type IDomainEvent interface {
-	ID() uuid.UUID
-	Name() string
+	GetEventID() uuid.UUID
+	GetEventName() string
 }

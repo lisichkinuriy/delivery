@@ -14,6 +14,7 @@ import (
 	httpin "lisichkinuriy/delivery/internal/adapters/in/http"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres/courierrepo"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres/orderrepo"
+	"lisichkinuriy/delivery/internal/adapters/outbox"
 	"lisichkinuriy/delivery/pkg/servers"
 	"net/http"
 	"os"
@@ -69,6 +70,11 @@ func mustAutoMigrate(db *gorm.DB) {
 	if err != nil {
 		log.Fatalf("Ошибка миграции: %v", err)
 	}
+
+	err = db.AutoMigrate(&outbox.Message{})
+	if err != nil {
+		log.Fatalf("Ошибка миграции: %v", err)
+	}
 }
 
 func startCron(compositionRoot cmd.CompositionRoot) {
@@ -81,6 +87,12 @@ func startCron(compositionRoot cmd.CompositionRoot) {
 	if err != nil {
 		log.Fatalf("ошибка при добавлении задачи: %v", err)
 	}
+
+	_, err = c.AddFunc("@every 10s", compositionRoot.Jobs.OutboxJob.Run)
+	if err != nil {
+		log.Fatalf("ошибка при добавлении задачи: %v", err)
+	}
+
 	c.Start()
 }
 

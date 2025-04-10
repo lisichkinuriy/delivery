@@ -8,6 +8,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"lisichkinuriy/delivery/internal/adapters/out/postgres"
+	"lisichkinuriy/delivery/internal/adapters/outbox"
 	"lisichkinuriy/delivery/internal/adapters/ports"
 	"lisichkinuriy/delivery/internal/domain/order"
 )
@@ -89,16 +90,29 @@ func (r Repository) Add(ctx context.Context, aggregate *order.Order) error {
 }
 
 func (r Repository) Update(ctx context.Context, aggregate *order.Order) error {
+	domainEvents := aggregate.GetDomainEvents()
+	outboxEvents, err := outbox.EncodeDomainEvents(domainEvents)
+	if err != nil {
+		return err
+	}
+
 	dto := DomainToDTO(aggregate)
 	tx := postgres.GetTxFromContext(ctx)
 	if tx == nil {
 		tx = r.db
 	}
-	err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(&dto).Error
+	err = tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(&dto).Error
 	if err != nil {
 		return err
 	}
-	err = r.PublishDomainEvents(ctx, aggregate)
+
+	if outboxEvents != nil && len(outboxEvents) > 0 {
+		err = tx.Create(&outboxEvents).Error
+		if err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

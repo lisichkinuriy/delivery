@@ -2,43 +2,38 @@ package order
 
 import (
 	"github.com/google/uuid"
+	"lisichkinuriy/delivery/internal/domain/pkg"
 )
 
-const CompletedDomainEventName = "order.completed.event"
+const CompletedDomainEventName = "CompletedDomainEvent"
+
+var _ pkg.IDomainEvent = CompletedDomainEvent{}
 
 type CompletedDomainEvent struct {
 	// base
-	id   uuid.UUID
-	name string
+	Id   uuid.UUID
+	Name string
 
 	// payload
-	orderID     uuid.UUID
-	orderStatus string
+	OrderID     uuid.UUID
+	OrderStatus string
 
 	isSet bool
 }
 
-func (e CompletedDomainEvent) ID() uuid.UUID { return e.id }
-
-func (e CompletedDomainEvent) Name() string {
-	return e.name
+func (e CompletedDomainEvent) GetEventName() string {
+	return e.Name
 }
 
-func (e CompletedDomainEvent) OrderID() uuid.UUID {
-	return e.orderID
-}
-
-func (e CompletedDomainEvent) OrderStatus() string {
-	return e.orderStatus
-}
+func (e CompletedDomainEvent) GetEventID() uuid.UUID { return e.Id }
 
 func NewCompletedDomainEvent(aggregate *Order) CompletedDomainEvent {
 	return CompletedDomainEvent{
-		id:   uuid.New(),
-		name: CompletedDomainEventName,
+		Id:   uuid.New(),
+		Name: CompletedDomainEventName,
 
-		orderID:     aggregate.ID(),
-		orderStatus: aggregate.Status().String(),
+		OrderID:     aggregate.ID(),
+		OrderStatus: aggregate.Status().String(),
 
 		isSet: true,
 	}
